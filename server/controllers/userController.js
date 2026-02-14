@@ -49,7 +49,7 @@ const updateProfile = async (req, res) => {
     if (email && email !== user.email) {
       const emailExists = await User.findOne({ email });
       if (emailExists) {
-        return res.status(400).json({
+        return res.status(400).js on({
           success: false,
           message: 'Email already in use'
         });

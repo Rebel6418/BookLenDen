@@ -59,7 +59,22 @@ const bookSchema = new mongoose.Schema({
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }]
+  }],
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  totalReviews: {
+    type: Number,
+    default: 0
+  },
+  ratings: {
+    type: Map,
+    of: Number,
+    default: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+  }
 }, {
   timestamps: true
 });

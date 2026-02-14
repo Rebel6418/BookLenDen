@@ -7,7 +7,7 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -30,13 +30,13 @@ const Navbar = () => {
 
   return (
     <nav className={`sticky top-0 z-50 transition-all duration-300 ${
-      isScrolled 
-        ? 'bg-white/90 backdrop-blur-xl shadow-lg' 
+      isScrolled
+        ? 'bg-white/90 backdrop-blur-xl shadow-lg'
         : 'bg-white border-b border-gray-100'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          
+
           {/* Logo */}
           <Link to="/" className="flex items-center group">
             <div className="relative">
@@ -63,8 +63,8 @@ const Navbar = () => {
               </span>
             </Link>
 
-            <Link 
-              to="/orders" 
+            <Link
+              to="/orders"
               className={`relative p-3 rounded-xl transition-all group ${
                 isActive('/orders') ? 'bg-blue-50' : 'hover:bg-gray-50'
               }`}
@@ -76,8 +76,8 @@ const Navbar = () => {
               </svg>
             </Link>
 
-            <Link 
-              to="/cart" 
+            <Link
+              to="/cart"
               className={`relative p-3 rounded-xl transition-all group ${
                 isActive('/cart') ? 'bg-blue-50' : 'hover:bg-gray-50'
               }`}
@@ -111,8 +111,8 @@ const Navbar = () => {
 
                 {isProfileOpen && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-10" 
+                    <div
+                      className="fixed inset-0 z-10"
                       onClick={() => setIsProfileOpen(false)}
                     ></div>
                     <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-premium border border-gray-100 overflow-hidden z-20">
@@ -201,7 +201,7 @@ const Navbar = () => {
                 </div>
                 <Link
                   to="/sell"
-                  className="block w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-center shadow-lg"
+                  className="block w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-center shadow-lg"       
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   🚀 Sell Book
@@ -225,18 +225,6 @@ const Navbar = () => {
                   className="block px-4 py-3 hover:bg-gray-50 rounded-xl text-gray-700 font-medium"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <Link 
-  to="/wishlist" 
-  className={`relative p-3 rounded-xl transition-all group ${
-    isActive('/wishlist') ? 'bg-pink-50' : 'hover:bg-gray-50'
-  }`}
->
-  <svg className={`w-6 h-6 transition-colors ${
-    isActive('/wishlist') ? 'text-pink-600' : 'text-gray-600 group-hover:text-pink-600'
-  }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-  </svg>
-</Link>
                   🛒 Cart
                 </Link>
                 <Link
@@ -260,7 +248,7 @@ const Navbar = () => {
               <>
                 <Link
                   to="/sell"
-                  className="block w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-center shadow-lg"
+                  className="block w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-center shadow-lg"       
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   🚀 Sell Book

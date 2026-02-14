@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FiStar, FiX } from 'react-icons/fi';
+import { FiStar, FiX, FiUpload } from 'react-icons/fi';
 import { reviewsAPI } from '../services/api';
 
 const WriteReview = ({ bookId, bookTitle, orderId, onClose, onSuccess }) => {
@@ -7,25 +7,22 @@ const WriteReview = ({ bookId, bookTitle, orderId, onClose, onSuccess }) => {
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (rating === 0) {
-      setError('Please select a rating');
+      alert('Please select a rating');
       return;
     }
 
     if (!comment.trim()) {
-      setError('Please write a review');
+      alert('Please write a review');
       return;
     }
 
-    setLoading(true);
-    setError('');
-
     try {
+      setLoading(true);
       await reviewsAPI.create({
         bookId,
         orderId,
@@ -33,37 +30,37 @@ const WriteReview = ({ bookId, bookTitle, orderId, onClose, onSuccess }) => {
         comment: comment.trim()
       });
 
+      alert('Review submitted successfully!');
       onSuccess?.();
-      onClose();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit review');
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert(error.response?.data?.message || 'Failed to submit review');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 relative max-h-[90vh] overflow-y-auto">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <FiX size={24} />
-        </button>
-
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Write a Review</h2>
-        <p className="text-gray-600 mb-6">{bookTitle}</p>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-            {error}
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 p-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Write a Review</h2>
+            <p className="text-blue-100 text-sm mt-1">{bookTitle}</p>
           </div>
-        )}
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          >
+            <FiX className="w-6 h-6 text-white" />
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Rating */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
               Your Rating *
             </label>
             <div className="flex gap-2">
@@ -74,11 +71,10 @@ const WriteReview = ({ bookId, bookTitle, orderId, onClose, onSuccess }) => {
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHover(star)}
                   onMouseLeave={() => setHover(0)}
-                  className="focus:outline-none transition-transform hover:scale-110"
+                  className="transition-all transform hover:scale-110"
                 >
                   <FiStar
-                    size={36}
-                    className={`${
+                    className={`w-10 h-10 ${
                       star <= (hover || rating)
                         ? 'fill-yellow-400 text-yellow-400'
                         : 'text-gray-300'
@@ -90,48 +86,61 @@ const WriteReview = ({ bookId, bookTitle, orderId, onClose, onSuccess }) => {
             {rating > 0 && (
               <p className="text-sm text-gray-600 mt-2">
                 {rating === 5 && '⭐ Excellent!'}
-                {rating === 4 && '⭐ Good'}
-                {rating === 3 && '⭐ Average'}
-                {rating === 2 && '⭐ Poor'}
-                {rating === 1 && '⭐ Terrible'}
+                {rating === 4 && '👍 Very Good!'}
+                {rating === 3 && '😊 Good'}
+                {rating === 2 && '😐 Fair'}
+                {rating === 1 && '👎 Poor'}
               </p>
             )}
           </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          {/* Comment */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Your Review *
             </label>
             <textarea
               value={comment}
-              onChange={(e) => {
-                setComment(e.target.value);
-                setError('');
-              }}
-              rows="6"
-              maxLength="500"
-              placeholder="Share your thoughts about this book..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your thoughts about this book... (Max 500 characters)"
+              rows={6}
+              maxLength={500}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"
+              required
             />
-            <p className="text-xs text-gray-500 mt-1 text-right">
-              {comment.length}/500
-            </p>
+            <div className="flex justify-between items-center mt-2">
+              <p className="text-sm text-gray-500">
+                💡 Tip: Mention book condition, packaging, and delivery experience
+              </p>
+              <p className="text-sm text-gray-500">
+                {comment.length}/500
+              </p>
+            </div>
           </div>
 
-          <div className="flex gap-3">
+          {/* Submit Button */}
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+              disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+              disabled={loading || rating === 0 || !comment.trim()}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {loading ? 'Submitting...' : 'Submit Review'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Submitting...
+                </span>
+              ) : (
+                'Submit Review'
+              )}
             </button>
           </div>
         </form>

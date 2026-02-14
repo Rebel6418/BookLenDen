@@ -13,53 +13,56 @@ const bookSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    default: ''
-  },
-  category: {
-    type: String,
-    required: true,
-    default: 'General'
-  },
-  condition: {
-    type: String,
-    required: true,
-    enum: ['Old', 'New']
+    required: true
   },
   price: {
     type: Number,
     required: true,
     min: 0
   },
+  originalPrice: {
+    type: Number
+  },
+  category: {
+    type: String,
+    required: true
+  },
+  condition: {
+    type: String,
+    enum: ['new', 'like-new', 'good', 'fair', 'poor'],
+    required: true
+  },
   image: {
     type: String,
-    default: 'https://placehold.co/400x600/3b82f6/ffffff?text=📚+Book'
+    required: true
+  },
+  images: [{
+    type: String
+  }],
+  isbn: {
+    type: String,
+    sparse: true
+  },
+  language: {
+    type: String,
+    default: 'English'
   },
   seller: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  isAvailable: {
-    type: Boolean,
-    default: true
+  stock: {
+    type: Number,
+    default: 1,
+    min: 0
   },
   status: {
     type: String,
     enum: ['available', 'sold', 'reserved'],
     default: 'available'
   },
-  language: {
-    type: String,
-    default: 'English'
-  },
-  views: {
-    type: Number,
-    default: 0
-  },
-  likes: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
+  // Rating fields
   averageRating: {
     type: Number,
     default: 0,
@@ -69,14 +72,12 @@ const bookSchema = new mongoose.Schema({
   totalReviews: {
     type: Number,
     default: 0
-  },
-  ratings: {
-    type: Map,
-    of: Number,
-    default: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
   }
 }, {
   timestamps: true
 });
+
+// Index for search
+bookSchema.index({ title: 'text', author: 'text', description: 'text' });
 
 module.exports = mongoose.models.Book || mongoose.model('Book', bookSchema);

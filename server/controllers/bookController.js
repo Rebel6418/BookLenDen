@@ -1,11 +1,20 @@
 const Book = require('../models/Book');
 
+// Get all books with filters
 const getAllBooks = async (req, res) => {
   try {
-    const { search, category, condition } = req.query;
+    const { 
+      search, 
+      category, 
+      condition, 
+      minPrice, 
+      maxPrice, 
+      sortBy 
+    } = req.query;
     
     let query = { isAvailable: true };
 
+    // Search by title or author
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -13,19 +22,34 @@ const getAllBooks = async (req, res) => {
       ];
     }
 
+    // Filter by category
     if (category && category !== 'All') {
       query.category = category;
     }
 
-    if (condition) {
+    // Filter by condition
+    if (condition && condition !== 'All') {
       query.condition = condition;
     }
 
+    // Filter by price range
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
+
+    // Build sort option
+    let sortOption = { createdAt: -1 }; // Default: newest first
+    if (sortBy === 'price_low') sortOption = { price: 1 };
+    if (sortBy === 'price_high') sortOption = { price: -1 };
+    if (sortBy === 'title') sortOption = { title: 1 };
+
     const books = await Book.find(query)
       .populate('seller', 'name mobile firstName lastName')
-      .sort({ createdAt: -1 });
+      .sort(sortOption);
     
-    console.log(`📚 Found ${books.length} books`);
+    console.log(`📚 Found ${books.length} books (Filters: ${JSON.stringify(req.query)})`);
     
     res.status(200).json({
       success: true,
@@ -75,25 +99,14 @@ const createBook = async (req, res) => {
     console.log('User:', req.user?._id);
     console.log('Body:', req.body);
     console.log('File:', req.file);
+    console.log('File Path:', req.file?.path);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     const { title, author, price, condition, category, description } = req.body;
     
-    // ✅ FIXED: Store only filename, NOT full URL
-    let image;
-    if (req.file) {
-      // If using Cloudinary (req.file.path will be URL)
-      if (req.file.path && req.file.path.startsWith('http')) {
-        image = req.file.path;
-      } else {
-        // ✅ Store ONLY filename
-        image = req.file.filename;
-      }
-    } else {
-      image = 'https://placehold.co/400x600/3b82f6/ffffff?text=📚+Book';
-    }
-
-    console.log('📷 Final Image to save:', image);
+    const image = req.file 
+      ? req.file.path 
+      : 'https://placehold.co/400x600/3b82f6/ffffff?text=No+Image';
 
     if (!req.user || !req.user._id) {
       return res.status(401).json({ 
@@ -124,7 +137,7 @@ const createBook = async (req, res) => {
       .populate('seller', 'name mobile firstName lastName');
 
     console.log('✅ Book created successfully:', populatedBook._id);
-    console.log('✅ Image saved as:', image);
+    console.log('📷 Image URL:', image);
 
     res.status(201).json({
       success: true,

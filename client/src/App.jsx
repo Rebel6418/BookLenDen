@@ -10,6 +10,7 @@ import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import MyBooks from './pages/MyBooks';
 import Profile from './pages/Profile';
+import Wishlist from './pages/Wishlist';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -22,7 +23,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/book/:id" element={<BookDetails />} />
-          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+          
           <Route 
             path="/sell" 
             element={
@@ -73,6 +74,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/wishlist" 
+            element={
+              <ProtectedRoute>
+                <Wishlist />
               </ProtectedRoute>
             } 
           />

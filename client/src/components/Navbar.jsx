@@ -47,23 +47,6 @@ const Navbar = () => {
             </div>
           </Link>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-2xl mx-8">
-            <div className="relative w-full group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-300"></div>
-              <div className="relative flex items-center">
-                <svg className="absolute left-4 w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search for books, authors, categories..."
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all text-sm font-medium"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-2">
             <Link
@@ -132,7 +115,7 @@ const Navbar = () => {
                       className="fixed inset-0 z-10" 
                       onClick={() => setIsProfileOpen(false)}
                     ></div>
-                    <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-premium border border-gray-100 overflow-hidden z-20 animate-fade-in">
+                    <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-premium border border-gray-100 overflow-hidden z-20">
                       <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
                         <p className="font-bold text-gray-900">{user?.name || 'User'}</p>
                         <p className="text-sm text-gray-600">{user?.mobile || user?.email}</p>
@@ -210,17 +193,6 @@ const Navbar = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
           <div className="px-4 py-4 space-y-3">
-            <div className="relative">
-              <svg className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search books..."
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-
             {token ? (
               <>
                 <div className="px-4 py-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
@@ -253,6 +225,18 @@ const Navbar = () => {
                   className="block px-4 py-3 hover:bg-gray-50 rounded-xl text-gray-700 font-medium"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
+                  <Link 
+  to="/wishlist" 
+  className={`relative p-3 rounded-xl transition-all group ${
+    isActive('/wishlist') ? 'bg-pink-50' : 'hover:bg-gray-50'
+  }`}
+>
+  <svg className={`w-6 h-6 transition-colors ${
+    isActive('/wishlist') ? 'text-pink-600' : 'text-gray-600 group-hover:text-pink-600'
+  }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+  </svg>
+</Link>
                   🛒 Cart
                 </Link>
                 <Link

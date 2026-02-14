@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
-
+const wishlistRoutes = require('./routes/wishlistRoutes');
 const app = express();
 
 // Middleware
@@ -30,7 +30,8 @@ app.use('/api/otp', require('./routes/otpRoutes'));
 app.use('/api/books', require('./routes/bookRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
-app.use('/api/users', require('./routes/userRoutes')); // ✅ NEW: User routes
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/wishlist', wishlistRoutes); // ✅ NEW: User routes
 
 // Health check
 app.get('/api/health', (req, res) => {

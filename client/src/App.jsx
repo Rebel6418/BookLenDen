@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/admin/Dashboard';
+import UsersManagement from './pages/admin/UsersManagement';
 import BooksManagement from './pages/admin/BooksManagement';
 import OrdersManagement from './pages/admin/OrdersManagement';
 import Reports from './pages/admin/Reports';
@@ -33,6 +34,7 @@ function App() {
           <Route path="/admin/books" element={<BooksManagement />} />
           <Route path="/admin/orders" element={<OrdersManagement />} />
           <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/admin/users" element={<UsersManagement />} />
           <Route 
             path="/sell" 
             element={

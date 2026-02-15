@@ -8,7 +8,6 @@ const {
   getRecentOrders,
   getRecentUsers,
   getTopBooks,
-  getOrderStatusDistribution,
 
   // User Management
   getAllUsers,
@@ -20,7 +19,7 @@ const {
 
   // Order Management
   getAllOrders,
-  updateOrderStatus,
+  adminUpdateOrderStatus,
   deleteOrder,
 
   // Reports
@@ -64,11 +63,6 @@ router.get('/recent-users', getRecentUsers);
 // @access  Private/Admin
 router.get('/top-books', getTopBooks);
 
-// @route   GET /api/admin/order-status-distribution
-// @desc    Get order status distribution
-// @access  Private/Admin
-router.get('/order-status-distribution', getOrderStatusDistribution);
-
 // ============================================
 // USER MANAGEMENT ROUTES
 // ============================================
@@ -78,6 +72,27 @@ router.get('/order-status-distribution', getOrderStatusDistribution);
 // @access  Private/Admin
 // Query params: page, limit, search, role
 router.get('/users', getAllUsers);
+
+// @route   PUT /api/admin/users/:userId/toggle-status
+// @desc    Toggle user active/inactive status
+// @access  Private/Admin
+router.put('/users/:userId/toggle-status', async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const user = await User.findById(req.params.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    user.isVerified = !user.isVerified;
+    await user.save();
+    
+    res.json({ message: 'User status updated', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update user status' });
+  }
+});
 
 // @route   DELETE /api/admin/users/:userId
 // @desc    Delete user (cannot delete admins)
@@ -93,6 +108,27 @@ router.delete('/users/:userId', deleteUser);
 // @access  Private/Admin
 // Query params: page, limit, search, category, status
 router.get('/books', getAllBooks);
+
+// @route   PUT /api/admin/books/:bookId/toggle-status
+// @desc    Toggle book available/sold status
+// @access  Private/Admin
+router.put('/books/:bookId/toggle-status', async (req, res) => {
+  try {
+    const Book = require('../models/Book');
+    const book = await Book.findById(req.params.bookId);
+    
+    if (!book) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+    
+    book.status = book.status === 'available' ? 'sold' : 'available';
+    await book.save();
+    
+    res.json({ message: 'Book status updated', book });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update book status' });
+  }
+});
 
 // @route   DELETE /api/admin/books/:bookId
 // @desc    Delete any book
@@ -112,8 +148,8 @@ router.get('/orders', getAllOrders);
 // @route   PUT /api/admin/orders/:orderId/status
 // @desc    Update order status (admin can update any order)
 // @access  Private/Admin
-// Body: { status, note }
-router.put('/orders/:orderId/status', updateOrderStatus);
+// Body: { status }
+router.put('/orders/:orderId/status', adminUpdateOrderStatus);
 
 // @route   DELETE /api/admin/orders/:orderId
 // @desc    Delete order
@@ -127,7 +163,49 @@ router.delete('/orders/:orderId', deleteOrder);
 // @route   GET /api/admin/reports/sales
 // @desc    Get sales report with date range
 // @access  Private/Admin
-// Query params: startDate, endDate, groupBy (day/month/year)
+// Query params: startDate, endDate
 router.get('/reports/sales', getSalesReport);
+
+// @route   GET /api/admin/reports/categories
+// @desc    Get category-wise sales report
+// @access  Private/Admin
+router.get('/reports/categories', async (req, res) => {
+  try {
+    const Order = require('../models/Order');
+    
+    const categories = await Order.aggregate([
+      { $match: { orderStatus: { $ne: 'cancelled' } } },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'books',
+          localField: 'items.book',
+          foreignField: '_id',
+          as: 'bookData'
+        }
+      },
+      { $unwind: '$bookData' },
+      {
+        $group: {
+          _id: '$bookData.category',
+          value: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+          orders: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          name: '$_id',
+          value: 1,
+          orders: 1,
+          _id: 0
+        }
+      }
+    ]);
+    
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch category report' });
+  }
+});
 
 module.exports = router;

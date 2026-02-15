@@ -3,49 +3,63 @@ const Book = require('../models/Book');
 const Order = require('../models/Order');
 
 // ============================================
-// DASHBOARD STATS (Fixed)
+// DASHBOARD STATS
 // ============================================
 
 const getDashboardStats = async (req, res) => {
   try {
     console.log('📊 Fetching dashboard stats...');
 
-    // Basic counts with error handling
-    const totalUsers = await User.countDocuments({ role: 'user' }).catch(() => 0);
-    const totalBooks = await Book.countDocuments().catch(() => 0);
-    const totalOrders = await Order.countDocuments().catch(() => 0);
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const totalBooks = await Book.countDocuments();
+    const totalOrders = await Order.countDocuments();
 
-    // Calculate revenue safely
-    let totalRevenue = 0;
-    try {
-      const revenueResult = await Order.aggregate([
-        { $match: { orderStatus: { $ne: 'cancelled' } } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
-      ]);
-      totalRevenue = revenueResult[0]?.total || 0;
-    } catch (error) {
-      console.log('Revenue calculation failed, using 0');
-    }
+    const revenueResult = await Order.aggregate([
+      { $match: { orderStatus: { $ne: 'cancelled' } } },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    ]);
 
-    console.log('✅ Stats:', { totalUsers, totalBooks, totalOrders, totalRevenue });
+    const totalRevenue = revenueResult[0]?.total || 0;
 
-    res.status(200).json({
-      success: true,
-      stats: {
-        totalUsers,
-        totalBooks,
-        totalOrders,
-        totalRevenue
+    // Order status distribution
+    const statusResult = await Order.aggregate([
+      {
+        $group: {
+          _id: '$orderStatus',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const ordersByStatus = {
+      pending: 0,
+      confirmed: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0
+    };
+
+    statusResult.forEach(item => {
+      if (item._id && ordersByStatus.hasOwnProperty(item._id)) {
+        ordersByStatus[item._id] = item.count;
       }
     });
 
+    const response = {
+      totalUsers,
+      totalBooks,
+      totalOrders,
+      totalRevenue,
+      ordersByStatus
+    };
+
+    console.log('✅ Stats:', response);
+
+    res.json(response);
+
   } catch (error) {
     console.error('❌ Dashboard Stats Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch dashboard statistics',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to fetch dashboard statistics' });
   }
 };
 
@@ -55,42 +69,44 @@ const getDashboardStats = async (req, res) => {
 
 const getSalesChart = async (req, res) => {
   try {
-    console.log('📈 Fetching sales chart data...');
+    const days = parseInt(req.query.days) || 30;
+    console.log(`📈 Fetching sales chart for ${days} days...`);
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     const salesData = await Order.aggregate([
       {
         $match: {
-          createdAt: { $gte: thirtyDaysAgo },
+          createdAt: { $gte: startDate },
           orderStatus: { $ne: 'cancelled' }
         }
       },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-          sales: { $sum: '$totalAmount' },
+          revenue: { $sum: '$totalAmount' },
           orders: { $sum: 1 }
         }
       },
-      { $sort: { _id: 1 } }
-    ]).catch(() => []);
+      { $sort: { _id: 1 } },
+      {
+        $project: {
+          date: '$_id',
+          revenue: 1,
+          orders: 1,
+          _id: 0
+        }
+      }
+    ]);
 
     console.log(`✅ Found ${salesData.length} data points`);
 
-    res.status(200).json({
-      success: true,
-      data: salesData
-    });
+    res.json(salesData);
 
   } catch (error) {
     console.error('❌ Sales Chart Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch sales chart data',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to fetch sales chart data' });
   }
 };
 
@@ -103,27 +119,26 @@ const getRecentOrders = async (req, res) => {
     console.log('📦 Fetching recent orders...');
 
     const orders = await Order.find()
-      .populate('buyer', 'firstName lastName email')
-      .populate('items.book', 'title author image')
+      .populate('buyer', 'firstName lastName email mobile')
+      .populate('items.book', 'title author image price')
       .sort({ createdAt: -1 })
       .limit(10)
-      .lean()
-      .catch(() => []);
+      .lean();
 
-    console.log(`✅ Found ${orders.length} recent orders`);
+    // Transform orders to include book info at root level
+    const transformedOrders = orders.map(order => ({
+      ...order,
+      book: order.items && order.items[0] ? order.items[0].book : null,
+      status: order.orderStatus
+    }));
 
-    res.status(200).json({
-      success: true,
-      orders
-    });
+    console.log(`✅ Found ${transformedOrders.length} recent orders`);
+
+    res.json(transformedOrders);
 
   } catch (error) {
     console.error('❌ Recent Orders Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch recent orders',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to fetch recent orders' });
   }
 };
 
@@ -136,26 +151,18 @@ const getRecentUsers = async (req, res) => {
     console.log('👥 Fetching recent users...');
 
     const users = await User.find({ role: 'user' })
-      .select('firstName lastName email createdAt profilePicture')
+      .select('firstName lastName email mobile createdAt profilePicture')
       .sort({ createdAt: -1 })
       .limit(10)
-      .lean()
-      .catch(() => []);
+      .lean();
 
     console.log(`✅ Found ${users.length} recent users`);
 
-    res.status(200).json({
-      success: true,
-      users
-    });
+    res.json(users);
 
   } catch (error) {
     console.error('❌ Recent Users Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch recent users',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to fetch recent users' });
   }
 };
 
@@ -168,67 +175,46 @@ const getTopBooks = async (req, res) => {
     console.log('📚 Fetching top books...');
 
     const topBooks = await Order.aggregate([
+      { $match: { orderStatus: 'delivered' } },
       { $unwind: '$items' },
       {
         $group: {
           _id: '$items.book',
           title: { $first: '$items.title' },
-          totalSold: { $sum: '$items.quantity' },
+          salesCount: { $sum: '$items.quantity' },
           revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
         }
       },
-      { $sort: { totalSold: -1 } },
+      { $sort: { salesCount: -1 } },
       { $limit: 5 }
-    ]).catch(() => []);
+    ]);
 
-    console.log(`✅ Found ${topBooks.length} top books`);
+    // Populate book details
+    const bookIds = topBooks.map(item => item._id);
+    const books = await Book.find({ _id: { $in: bookIds } })
+      .select('title author image price')
+      .lean();
 
-    res.status(200).json({
-      success: true,
-      books: topBooks
+    const result = topBooks.map(item => {
+      const book = books.find(b => b._id.toString() === item._id.toString());
+      return {
+        _id: item._id,
+        title: book?.title || item.title,
+        author: book?.author || 'Unknown',
+        image: book?.image || '',
+        price: book?.price || 0,
+        salesCount: item.salesCount,
+        revenue: item.revenue
+      };
     });
+
+    console.log(`✅ Found ${result.length} top books`);
+
+    res.json(result);
 
   } catch (error) {
     console.error('❌ Top Books Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch top books',
-      error: error.message
-    });
-  }
-};
-
-// ============================================
-// ORDER STATUS DISTRIBUTION
-// ============================================
-
-const getOrderStatusDistribution = async (req, res) => {
-  try {
-    console.log('📊 Fetching order status distribution...');
-
-    const distribution = await Order.aggregate([
-      {
-        $group: {
-          _id: '$orderStatus',
-          count: { $sum: 1 }
-        }
-      }
-    ]).catch(() => []);
-
-    console.log(`✅ Found ${distribution.length} status types`);
-
-    res.status(200).json({
-      success: true,
-      distribution
-    });
-
-  } catch (error) {
-    console.error('❌ Status Distribution Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch order status distribution',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to fetch top books' });
   }
 };
 
@@ -238,13 +224,13 @@ const getOrderStatusDistribution = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '', role = 'all' } = req.query;
+    const { page = 1, limit = 10, search = '', role } = req.query;
 
     console.log(`👥 Getting users - Page: ${page}, Search: ${search}`);
 
     let query = {};
 
-    if (role !== 'all') {
+    if (role && role !== 'all') {
       query.role = role;
     }
 
@@ -259,7 +245,7 @@ const getAllUsers = async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const [users, totalUsers] = await Promise.all([
+    const [users, total] = await Promise.all([
       User.find(query)
         .select('-password')
         .sort({ createdAt: -1 })
@@ -271,69 +257,46 @@ const getAllUsers = async (req, res) => {
 
     console.log(`✅ Found ${users.length} users`);
 
-    res.status(200).json({
-      success: true,
+    res.json({
       users,
       pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalUsers / parseInt(limit)),
-        totalUsers,
-        usersPerPage: parseInt(limit)
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        total
       }
     });
 
   } catch (error) {
     console.error('❌ Get Users Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch users',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to fetch users' });
   }
 };
-
-// ============================================
-// DELETE USER
-// ============================================
 
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    console.log(`🗑️  Deleting user ${userId}`);
+    console.log(`🗑️ Deleting user ${userId}`);
 
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     if (user.role === 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Cannot delete admin users'
-      });
+      return res.status(403).json({ message: 'Cannot delete admin users' });
     }
 
     await User.findByIdAndDelete(userId);
 
     console.log(`✅ User deleted: ${user.email}`);
 
-    res.status(200).json({
-      success: true,
-      message: 'User deleted successfully'
-    });
+    res.json({ message: 'User deleted successfully' });
 
   } catch (error) {
     console.error('❌ Delete User Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete user',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to delete user' });
   }
 };
 
@@ -343,32 +306,33 @@ const deleteUser = async (req, res) => {
 
 const getAllBooks = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '', category = 'all', status = 'all' } = req.query;
+    const { page = 1, limit = 10, search = '', category, status } = req.query;
 
     console.log(`📚 Getting books - Page: ${page}`);
 
     let query = {};
 
-    if (category !== 'all') {
+    if (category && category !== 'all') {
       query.category = category;
     }
 
-    if (status !== 'all') {
+    if (status && status !== 'all') {
       query.status = status;
     }
 
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
-        { author: { $regex: search, $options: 'i' } }
+        { author: { $regex: search, $options: 'i' } },
+        { isbn: { $regex: search, $options: 'i' } }
       ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const [books, totalBooks] = await Promise.all([
+    const [books, total] = await Promise.all([
       Book.find(query)
-        .populate('seller', 'firstName lastName email')
+        .populate('seller', 'firstName lastName mobile email')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
@@ -378,60 +342,40 @@ const getAllBooks = async (req, res) => {
 
     console.log(`✅ Found ${books.length} books`);
 
-    res.status(200).json({
-      success: true,
+    res.json({
       books,
       pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalBooks / parseInt(limit)),
-        totalBooks,
-        booksPerPage: parseInt(limit)
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        total
       }
     });
 
   } catch (error) {
     console.error('❌ Get Books Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch books',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to fetch books' });
   }
 };
-
-// ============================================
-// DELETE BOOK
-// ============================================
 
 const deleteBook = async (req, res) => {
   try {
     const { bookId } = req.params;
 
-    console.log(`🗑️  Admin deleting book ${bookId}`);
+    console.log(`🗑️ Admin deleting book ${bookId}`);
 
     const book = await Book.findByIdAndDelete(bookId);
 
     if (!book) {
-      return res.status(404).json({
-        success: false,
-        message: 'Book not found'
-      });
+      return res.status(404).json({ message: 'Book not found' });
     }
 
     console.log(`✅ Book deleted: ${book.title}`);
 
-    res.status(200).json({
-      success: true,
-      message: 'Book deleted successfully'
-    });
+    res.json({ message: 'Book deleted successfully' });
 
   } catch (error) {
     console.error('❌ Delete Book Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete book',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to delete book' });
   }
 };
 
@@ -441,29 +385,28 @@ const deleteBook = async (req, res) => {
 
 const getAllOrders = async (req, res) => {
   try {
-    const { page = 1, limit = 20, status = 'all', search = '' } = req.query;
+    const { page = 1, limit = 10, status, search = '' } = req.query;
 
     console.log(`📦 Getting orders - Page: ${page}`);
 
     let query = {};
 
-    if (status !== 'all') {
+    if (status && status !== 'all') {
       query.orderStatus = status;
     }
 
     if (search) {
       query.$or = [
-        { invoiceNumber: { $regex: search, $options: 'i' } },
-        { 'shippingAddress.fullName': { $regex: search, $options: 'i' } }
+        { invoiceNumber: { $regex: search, $options: 'i' } }
       ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const [orders, totalOrders] = await Promise.all([
+    const [orders, total] = await Promise.all([
       Order.find(query)
-        .populate('buyer', 'firstName lastName email')
-        .populate('items.book', 'title author image')
+        .populate('buyer', 'firstName lastName email mobile')
+        .populate('items.book', 'title author image price')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
@@ -471,47 +414,43 @@ const getAllOrders = async (req, res) => {
       Order.countDocuments(query)
     ]);
 
-    console.log(`✅ Found ${orders.length} orders`);
+    // Transform orders
+    const transformedOrders = orders.map(order => ({
+      ...order,
+      book: order.items && order.items[0] ? order.items[0].book : null,
+      seller: order.items && order.items[0] ? order.items[0].seller : null,
+      status: order.orderStatus,
+      quantity: order.items && order.items[0] ? order.items[0].quantity : 0
+    }));
 
-    res.status(200).json({
-      success: true,
-      orders,
+    console.log(`✅ Found ${transformedOrders.length} orders`);
+
+    res.json({
+      orders: transformedOrders,
       pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalOrders / parseInt(limit)),
-        totalOrders,
-        ordersPerPage: parseInt(limit)
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        total
       }
     });
 
   } catch (error) {
     console.error('❌ Get Orders Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch orders',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to fetch orders' });
   }
 };
 
-// ============================================
-// UPDATE ORDER STATUS
-// ============================================
-
-const updateOrderStatus = async (req, res) => {
+const adminUpdateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { status, note } = req.body;
+    const { status } = req.body;
 
     console.log(`🔄 Updating order ${orderId} to ${status}`);
 
     const order = await Order.findById(orderId);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
+      return res.status(404).json({ message: 'Order not found' });
     }
 
     order.orderStatus = status;
@@ -521,76 +460,47 @@ const updateOrderStatus = async (req, res) => {
       order.paymentStatus = 'paid';
     }
 
-    order.statusHistory.push({
-      status,
-      timestamp: new Date(),
-      note: note || `Order ${status} by admin`,
-      updatedBy: req.user._id
-    });
-
     await order.save();
 
     console.log(`✅ Order status updated`);
 
-    res.status(200).json({
-      success: true,
-      message: `Order ${status} successfully`,
-      order
-    });
+    res.json({ message: `Order ${status} successfully`, order });
 
   } catch (error) {
     console.error('❌ Update Order Status Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update order status',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to update order status' });
   }
 };
-
-// ============================================
-// DELETE ORDER
-// ============================================
 
 const deleteOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
 
-    console.log(`🗑️  Admin deleting order ${orderId}`);
+    console.log(`🗑️ Admin deleting order ${orderId}`);
 
     const order = await Order.findByIdAndDelete(orderId);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
+      return res.status(404).json({ message: 'Order not found' });
     }
 
     console.log(`✅ Order deleted: ${order.invoiceNumber}`);
 
-    res.status(200).json({
-      success: true,
-      message: 'Order deleted successfully'
-    });
+    res.json({ message: 'Order deleted successfully' });
 
   } catch (error) {
     console.error('❌ Delete Order Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete order',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to delete order' });
   }
 };
 
 // ============================================
-// SALES REPORT
+// REPORTS
 // ============================================
 
 const getSalesReport = async (req, res) => {
   try {
-    const { startDate, endDate, groupBy = 'day' } = req.query;
+    const { startDate, endDate } = req.query;
 
     console.log('📊 Generating sales report...');
 
@@ -603,47 +513,93 @@ const getSalesReport = async (req, res) => {
       };
     }
 
-    let dateFormat;
-    switch (groupBy) {
-      case 'day':
-        dateFormat = '%Y-%m-%d';
-        break;
-      case 'month':
-        dateFormat = '%Y-%m';
-        break;
-      case 'year':
-        dateFormat = '%Y';
-        break;
-      default:
-        dateFormat = '%Y-%m-%d';
-    }
-
-    const salesData = await Order.aggregate([
-      { $match: dateQuery },
-      {
-        $group: {
-          _id: { $dateToString: { format: dateFormat, date: '$createdAt' } },
-          totalSales: { $sum: '$totalAmount' },
-          orderCount: { $sum: 1 }
+    const [salesByDate, salesByCategory, stats] = await Promise.all([
+      // Sales by date
+      Order.aggregate([
+        { $match: dateQuery },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            revenue: { $sum: '$totalAmount' },
+            orders: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        {
+          $project: {
+            date: '$_id',
+            revenue: 1,
+            orders: 1,
+            _id: 0
+          }
         }
-      },
-      { $sort: { _id: 1 } }
-    ]).catch(() => []);
+      ]),
+
+      // Sales by category
+      Order.aggregate([
+        { $match: dateQuery },
+        { $unwind: '$items' },
+        {
+          $lookup: {
+            from: 'books',
+            localField: 'items.book',
+            foreignField: '_id',
+            as: 'bookData'
+          }
+        },
+        { $unwind: '$bookData' },
+        {
+          $group: {
+            _id: '$bookData.category',
+            value: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+            orders: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            name: '$_id',
+            value: 1,
+            orders: 1,
+            _id: 0
+          }
+        }
+      ]),
+
+      // Overall stats
+      Order.aggregate([
+        { $match: dateQuery },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$totalAmount' },
+            totalOrders: { $sum: 1 }
+          }
+        }
+      ])
+    ]);
+
+    const totalSales = await Order.aggregate([
+      { $match: dateQuery },
+      { $unwind: '$items' },
+      { $group: { _id: null, total: { $sum: '$items.quantity' } } }
+    ]);
 
     console.log('✅ Sales report generated');
 
-    res.status(200).json({
-      success: true,
-      report: salesData
+    res.json({
+      salesByDate,
+      salesByCategory,
+      stats: {
+        totalRevenue: stats[0]?.totalRevenue || 0,
+        totalOrders: stats[0]?.totalOrders || 0,
+        totalSales: totalSales[0]?.total || 0,
+        avgOrderValue: stats[0]?.totalOrders ? stats[0].totalRevenue / stats[0].totalOrders : 0
+      }
     });
 
   } catch (error) {
     console.error('❌ Sales Report Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate sales report',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Failed to generate sales report' });
   }
 };
 
@@ -658,7 +614,6 @@ module.exports = {
   getRecentOrders,
   getRecentUsers,
   getTopBooks,
-  getOrderStatusDistribution,
 
   // User Management
   getAllUsers,
@@ -670,7 +625,7 @@ module.exports = {
 
   // Order Management
   getAllOrders,
-  updateOrderStatus,
+  adminUpdateOrderStatus,
   deleteOrder,
 
   // Reports

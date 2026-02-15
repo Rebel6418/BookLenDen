@@ -3,14 +3,19 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
-const wishlistRoutes = require('./routes/wishlistRoutes');
 const app = express();
 
-// Middleware
+// ============================================
+// MIDDLEWARE
+// ============================================
+
+// CORS
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
 }));
+
+// Body Parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -24,14 +29,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// ============================================
+// ROUTES
+// ============================================
+
+// Public Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/otp', require('./routes/otpRoutes'));
 app.use('/api/books', require('./routes/bookRoutes'));
+
+// Protected Routes (User)
 app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/wishlist', wishlistRoutes); // ✅ NEW: User routes
+app.use('/api/wishlist', require('./routes/wishlistRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+// 🆕 ADMIN ROUTES (Protected - Admin Only)
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -42,6 +56,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ============================================
+// ERROR HANDLERS
+// ============================================
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -50,7 +68,7 @@ app.use((req, res) => {
   });
 });
 
-// Error handler
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('💥 Error:', err);
   res.status(500).json({
@@ -59,7 +77,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// MongoDB Connection
+// ============================================
+// DATABASE CONNECTION & SERVER START
+// ============================================
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -77,6 +98,8 @@ mongoose.connect(process.env.MONGO_URI)
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
       console.log('📌 Available Routes:');
+      console.log('');
+      console.log('   🔓 PUBLIC ROUTES:');
       console.log('   POST   /api/auth/register');
       console.log('   POST   /api/auth/login');
       console.log('   POST   /api/otp/send-otp');
@@ -84,19 +107,35 @@ mongoose.connect(process.env.MONGO_URI)
       console.log('   POST   /api/otp/resend-otp');
       console.log('   GET    /api/books');
       console.log('   GET    /api/books/:id');
-      console.log('   GET    /api/books/my (protected)');
-      console.log('   POST   /api/books (protected)');
-      console.log('   PUT    /api/books/:id (protected)');
-      console.log('   DELETE /api/books/:id (protected)');
-      console.log('   GET    /api/cart (protected)');
-      console.log('   POST   /api/cart/add (protected)');
-      console.log('   GET    /api/orders/my-orders (protected)');
-      console.log('   POST   /api/orders (protected)');
-      console.log('   GET    /api/users/profile (protected)'); // ✅ NEW
-      console.log('   PUT    /api/users/profile (protected)'); // ✅ NEW
-      console.log('   POST   /api/users/change-password (protected)'); // ✅ NEW
-      console.log('   POST   /api/users/upload-picture (protected)'); // ✅ NEW
-      console.log('   GET    /api/users/stats (protected)'); // ✅ NEW
+      console.log('');
+      console.log('   🔒 PROTECTED ROUTES (User):');
+      console.log('   GET    /api/books/my');
+      console.log('   POST   /api/books');
+      console.log('   PUT    /api/books/:id');
+      console.log('   DELETE /api/books/:id');
+      console.log('   GET    /api/cart');
+      console.log('   POST   /api/cart/add');
+      console.log('   GET    /api/orders/my-orders');
+      console.log('   POST   /api/orders');
+      console.log('   GET    /api/users/profile');
+      console.log('   PUT    /api/users/profile');
+      console.log('   GET    /api/wishlist');
+      console.log('');
+      console.log('   👑 ADMIN ROUTES (Admin Only):');
+      console.log('   GET    /api/admin/dashboard/stats');
+      console.log('   GET    /api/admin/users');
+      console.log('   GET    /api/admin/users/:userId');
+      console.log('   PUT    /api/admin/users/:userId');
+      console.log('   DELETE /api/admin/users/:userId');
+      console.log('   GET    /api/admin/books');
+      console.log('   PUT    /api/admin/books/:bookId');
+      console.log('   DELETE /api/admin/books/:bookId');
+      console.log('   GET    /api/admin/orders');
+      console.log('   PUT    /api/admin/orders/:orderId/status');
+      console.log('   DELETE /api/admin/orders/:orderId');
+      console.log('   GET    /api/admin/reports/sales');
+      console.log('');
+      console.log('   ℹ️  OTHER:');
       console.log('   GET    /api/health');
       console.log('');
       console.log('✨ Ready to accept requests!');
@@ -111,3 +150,5 @@ mongoose.connect(process.env.MONGO_URI)
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     process.exit(1);
   });
+
+module.exports = app;

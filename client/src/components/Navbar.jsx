@@ -92,6 +92,25 @@ const Navbar = () => {
               </span>
             </Link>
 
+            {/* Admin Button - Shows only for admin users */}
+            {token && user?.role === 'admin' && (
+              <Link
+                to="/admin/dashboard"
+                className={`relative px-4 py-2.5 rounded-xl transition-all ${
+                  location.pathname.startsWith('/admin')
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                }`}
+              >
+                <span className="font-bold flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Admin
+                </span>
+              </Link>
+            )}
+
             {token ? (
               <div className="relative ml-2">
                 <button
@@ -117,10 +136,27 @@ const Navbar = () => {
                     ></div>
                     <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-premium border border-gray-100 overflow-hidden z-20">
                       <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
-                        <p className="font-bold text-gray-900">{user?.name || 'User'}</p>
+                        <p className="font-bold text-gray-900">{user?.firstName} {user?.lastName}</p>
                         <p className="text-sm text-gray-600">{user?.mobile || user?.email}</p>
+                        {user?.role === 'admin' && (
+                          <span className="inline-block mt-2 px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full">
+                            Admin
+                          </span>
+                        )}
                       </div>
                       <div className="p-2">
+                        {user?.role === 'admin' && (
+                          <Link
+                            to="/admin/dashboard"
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 rounded-xl transition-all text-purple-700 font-medium"
+                            onClick={() => setIsProfileOpen(false)}
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            Admin Dashboard
+                          </Link>
+                        )}
                         <Link
                           to="/profile"
                           className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-all text-gray-700 font-medium"
@@ -196,9 +232,26 @@ const Navbar = () => {
             {token ? (
               <>
                 <div className="px-4 py-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
-                  <p className="font-bold text-gray-900">{user?.name || 'User'}</p>
+                  <p className="font-bold text-gray-900">{user?.firstName} {user?.lastName}</p>
                   <p className="text-sm text-gray-600">{user?.mobile || user?.email}</p>
+                  {user?.role === 'admin' && (
+                    <span className="inline-block mt-2 px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full">
+                      Admin
+                    </span>
+                  )}
                 </div>
+
+                {/* Admin Link for Mobile */}
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin/dashboard"
+                    className="block w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold text-center shadow-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    🎯 Admin Dashboard
+                  </Link>
+                )}
+
                 <Link
                   to="/sell"
                   className="block w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-center shadow-lg"       

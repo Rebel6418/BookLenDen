@@ -12,6 +12,12 @@ import MyBooks from './pages/MyBooks';
 import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
 import ProtectedRoute from './components/ProtectedRoute';
+import Dashboard from './pages/admin/Dashboard';
+import BooksManagement from './pages/admin/BooksManagement';
+import OrdersManagement from './pages/admin/OrdersManagement';
+import Reports from './pages/admin/Reports';
+
+//import UsersManagement from './pages/admin/UsersManagement';
 
 function App() {
   return (
@@ -23,7 +29,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/book/:id" element={<BookDetails />} />
-          
+          <Route path="/admin/dashboard" element={<Dashboard />} />
+          <Route path="/admin/books" element={<BooksManagement />} />
+          <Route path="/admin/orders" element={<OrdersManagement />} />
+          <Route path="/admin/reports" element={<Reports />} />
           <Route 
             path="/sell" 
             element={

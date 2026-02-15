@@ -1,4 +1,4 @@
-const User = require('../models/user');
+const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -51,7 +51,8 @@ const register = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         mobile: user.mobile,
-        email: user.email
+        email: user.email,
+        role: user.role || 'user'  // ✅ ADDED - Role field
       },
       token
     });
@@ -111,7 +112,8 @@ const login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         mobile: user.mobile,
-        email: user.email
+        email: user.email,
+        role: user.role || 'user'  // ✅ ADDED - Admin role fix
       },
       token
     });
@@ -121,7 +123,7 @@ const login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Login failed'
-    });
+      });
   }
 };
 

@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const authMiddleware = async (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
     
@@ -46,6 +46,18 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-// ✅ DUAL EXPORT - Both old and new code will work
-module.exports = authMiddleware;
-module.exports.protect = authMiddleware;
+// ✅ ADD THIS FUNCTION
+const adminOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({
+      success: false,
+      message: 'Access denied. Admin only.'
+    });
+  }
+};
+
+// ✅ EXPORT BOTH
+module.exports = { protect, adminOnly };
+module.exports.protect = protect;

@@ -13,7 +13,9 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Books API
+// ============================================
+// BOOKS API
+// ============================================
 export const booksAPI = {
   getAll: (params) => api.get('/books', { params }),
   getById: (id) => api.get(`/books/${id}`),
@@ -23,7 +25,9 @@ export const booksAPI = {
   getMyBooks: () => api.get('/books/my')
 };
 
-// Cart API
+// ============================================
+// CART API
+// ============================================
 export const cartAPI = {
   get: () => api.get('/cart'),
   add: (data) => api.post('/cart/add', data),
@@ -32,7 +36,9 @@ export const cartAPI = {
   clear: () => api.delete('/cart/clear')
 };
 
-// Orders API
+// ============================================
+// ORDERS API
+// ============================================
 export const ordersAPI = {
   create: (data) => api.post('/orders', data),
   getMyOrders: () => api.get('/orders/my-orders'),
@@ -42,13 +48,45 @@ export const ordersAPI = {
   cancel: (id) => api.put(`/orders/${id}/cancel`)
 };
 
-// Reviews API
+// ============================================
+// REVIEWS API
+// ============================================
 export const reviewsAPI = {
   getBookReviews: (bookId, params) => api.get(`/reviews/book/${bookId}`, { params }),
   create: (data) => api.post('/reviews', data),
   update: (reviewId, data) => api.put(`/reviews/${reviewId}`, data),
   delete: (reviewId) => api.delete(`/reviews/${reviewId}`),
   markHelpful: (reviewId) => api.post(`/reviews/${reviewId}/helpful`)
+};
+
+// ============================================
+// ADMIN API
+// ============================================
+export const adminAPI = {
+  // Dashboard Stats
+  getDashboardStats: () => api.get('/admin/stats'),
+  getSalesChart: () => api.get('/admin/sales-chart'),
+  getRecentOrders: () => api.get('/admin/recent-orders'),
+  getRecentUsers: () => api.get('/admin/recent-users'),
+  getTopBooks: () => api.get('/admin/top-books'),
+  getOrderStatusDistribution: () => api.get('/admin/order-status-distribution'),
+
+  // User Management
+  getAllUsers: (params) => api.get('/admin/users', { params }),
+  getUserDetails: (userId) => api.get(`/admin/users/${userId}`),
+  deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
+
+  // Book Management
+  getAllBooks: (params) => api.get('/admin/books', { params }),
+  deleteBook: (bookId) => api.delete(`/admin/books/${bookId}`),
+
+  // Order Management
+  getAllOrders: (params) => api.get('/admin/orders', { params }),
+  updateOrderStatus: (orderId, data) => api.put(`/admin/orders/${orderId}/status`, data),
+  deleteOrder: (orderId) => api.delete(`/admin/orders/${orderId}`),
+
+  // Reports
+  getSalesReport: (params) => api.get('/admin/reports/sales', { params })
 };
 
 export default api;

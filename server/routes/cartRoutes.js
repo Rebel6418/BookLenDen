@@ -7,13 +7,13 @@ const {
   removeFromCart, 
   clearCart 
 } = require('../controllers/cartController');
-const authMiddleware = require('../middleware/authMiddleware');  // ✅ Default import
+const { protect } = require('../middleware/authMiddleware');  // ✅ FIXED: Named import
 
 // All routes protected
-router.get('/', authMiddleware, getCart);
-router.post('/add', authMiddleware, addToCart);
-router.put('/update', authMiddleware, updateCartItem);
-router.delete('/remove/:bookId', authMiddleware, removeFromCart);
-router.delete('/clear', authMiddleware, clearCart);
+router.get('/', protect, getCart);
+router.post('/add', protect, addToCart);
+router.put('/update', protect, updateCartItem);
+router.delete('/remove/:bookId', protect, removeFromCart);
+router.delete('/clear', protect, clearCart);
 
 module.exports = router;

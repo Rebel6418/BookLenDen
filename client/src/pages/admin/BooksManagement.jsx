@@ -274,7 +274,7 @@ const BooksManagement = () => {
             <p className="text-3xl font-bold">
               {books.filter(b => b.status === 'reserved').length}
             </p>
-          </div>
+          </div> 
         </div>
       </div>
     </AdminLayout>

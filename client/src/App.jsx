@@ -17,7 +17,7 @@ import UsersManagement from './pages/admin/UsersManagement';
 import BooksManagement from './pages/admin/BooksManagement';
 import OrdersManagement from './pages/admin/OrdersManagement';
 import Reports from './pages/admin/Reports';
-
+import CategoryPage from './pages/CategoryPage';
 //import UsersManagement from './pages/admin/UsersManagement';
 
 function App() {
@@ -35,6 +35,7 @@ function App() {
           <Route path="/admin/orders" element={<OrdersManagement />} />
           <Route path="/admin/reports" element={<Reports />} />
           <Route path="/admin/users" element={<UsersManagement />} />
+          <Route path="/category/:category" element={<CategoryPage />} />
           <Route 
             path="/sell" 
             element={

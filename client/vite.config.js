@@ -4,22 +4,27 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0',  // Changed from true to '0.0.0.0'
+    host: true,
     port: 5173,
     strictPort: false,
-    cors: true,  // ✅ Added
+    // ✅ Allow ngrok domains
+    allowedHosts: [
+      '.ngrok-free.dev',
+      '.ngrok.io', 
+      '.ngrok-free.app',
+      'localhost'
+    ],
+    // ✅ Backend proxy (IMPORTANT!)
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path,  // ✅ Added
       },
       '/uploads': {
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path,  // ✅ Added
       }
     }
   }

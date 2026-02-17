@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import ChatBot from './components/ChatBot';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -18,24 +19,30 @@ import BooksManagement from './pages/admin/BooksManagement';
 import OrdersManagement from './pages/admin/OrdersManagement';
 import Reports from './pages/admin/Reports';
 import CategoryPage from './pages/CategoryPage';
-//import UsersManagement from './pages/admin/UsersManagement';
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Navbar />
+        
+        {/* All Routes */}
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/book/:id" element={<BookDetails />} />
+          <Route path="/category/:category" element={<CategoryPage />} />
+          
+          {/* Admin Routes */}
           <Route path="/admin/dashboard" element={<Dashboard />} />
+          <Route path="/admin/users" element={<UsersManagement />} />
           <Route path="/admin/books" element={<BooksManagement />} />
           <Route path="/admin/orders" element={<OrdersManagement />} />
           <Route path="/admin/reports" element={<Reports />} />
-          <Route path="/admin/users" element={<UsersManagement />} />
-          <Route path="/category/:category" element={<CategoryPage />} />
+          
+          {/* Protected User Routes */}
           <Route 
             path="/sell" 
             element={
@@ -99,6 +106,9 @@ function App() {
             } 
           />
         </Routes>
+
+        {/* ChatBot - Shows on ALL pages */}
+        <ChatBot />
       </div>
     </Router>
   );

@@ -9,6 +9,7 @@ import BookDetails from './pages/BookDetails';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
+import MySales from './pages/MySales';       // ✅ NEW
 import MyBooks from './pages/MyBooks';
 import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
@@ -18,15 +19,14 @@ import UsersManagement from './pages/admin/UsersManagement';
 import BooksManagement from './pages/admin/BooksManagement';
 import OrdersManagement from './pages/admin/OrdersManagement';
 import Reports from './pages/admin/Reports';
-import CategoryPage from './pages/CategoryPage';
+import CategoryPage from './pages/Categorypage';
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        
-        {/* All Routes */}
+
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
@@ -34,77 +34,23 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/book/:id" element={<BookDetails />} />
           <Route path="/category/:category" element={<CategoryPage />} />
-          
+
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/users" element={<UsersManagement />} />
           <Route path="/admin/books" element={<BooksManagement />} />
           <Route path="/admin/orders" element={<OrdersManagement />} />
           <Route path="/admin/reports" element={<Reports />} />
-          
+
           {/* Protected User Routes */}
-          <Route 
-            path="/sell" 
-            element={
-              <ProtectedRoute>
-                <SellBook />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/cart" 
-            element={
-              <ProtectedRoute>
-                <Cart />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/checkout" 
-            element={
-              <ProtectedRoute>
-                <Checkout />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/orders" 
-            element={
-              <ProtectedRoute>
-                <Orders />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/my-books" 
-            element={
-              <ProtectedRoute>
-                <MyBooks />
-              </ProtectedRoute>
-            } 
-          />
-
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } 
-          />
-
-          <Route 
-            path="/wishlist" 
-            element={
-              <ProtectedRoute>
-                <Wishlist />
-              </ProtectedRoute>
-            } 
-          />
+          <Route path="/sell" element={<ProtectedRoute><SellBook /></ProtectedRoute>} />
+          <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+          <Route path="/my-sales" element={<ProtectedRoute><MySales /></ProtectedRoute>} />  {/* ✅ NEW */}
+          <Route path="/my-books" element={<ProtectedRoute><MyBooks /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
         </Routes>
 
         {/* ChatBot - Shows on ALL pages */}

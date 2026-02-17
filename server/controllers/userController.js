@@ -261,3 +261,92 @@ module.exports = {
   uploadProfilePicture,
   getUserStats
 };
+// UPDATE SELLER ADDRESS
+// ============================================
+const updateSellerAddress = async (req, res) => {
+  try {
+    const { sellerAddress } = req.body;
+
+    if (!sellerAddress) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Seller address is required' 
+      });
+    }
+
+    // Validate required fields
+    const { fullName, mobile, addressLine1, city, state, pincode } = sellerAddress;
+    if (!fullName || !mobile || !addressLine1 || !city || !state || !pincode) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please fill all required address fields' 
+      });
+    }
+
+    // Validate pincode
+    if (pincode.length !== 6 || isNaN(pincode)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid pincode. Must be 6 digits.' 
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { sellerAddress },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    console.log(`✅ Seller address updated for user: ${user.email}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Seller pickup address updated successfully!',
+      user
+    });
+
+  } catch (error) {
+    console.error('❌ Update Seller Address Error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update seller address' 
+    });
+  }
+};
+
+// ============================================
+// UPDATE BANK DETAILS
+// ============================================
+const updateBankDetails = async (req, res) => {
+  try {
+    const { bankDetails } = req.body;
+
+    if (!bankDetails) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Bank details are required' 
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { bankDetails },
+      { new: true }
+    ).select('-password -bankDetails.accountNumber');
+
+    res.status(200).json({
+      success: true,
+      message: 'Bank details updated successfully!',
+      user
+    });
+
+  } catch (error) {
+    console.error('❌ Update Bank Details Error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update bank details' 
+    });
+  }
+};
+
+module.exports = { updateSellerAddress, updateBankDetails, getUserStats };

@@ -254,17 +254,13 @@ const getUserStats = async (req, res) => {
   }
 };
 
-module.exports = {
-  getProfile,
-  updateProfile,
-  changePassword,
-  uploadProfilePicture,
-  getUserStats
-};
-// UPDATE SELLER ADDRESS
+// ============================================
+// ✅ NEW: UPDATE SELLER ADDRESS
 // ============================================
 const updateSellerAddress = async (req, res) => {
   try {
+    console.log('🏠 UPDATE SELLER ADDRESS - User:', req.user._id);
+    
     const { sellerAddress } = req.body;
 
     if (!sellerAddress) {
@@ -315,10 +311,12 @@ const updateSellerAddress = async (req, res) => {
 };
 
 // ============================================
-// UPDATE BANK DETAILS
+// ✅ NEW: UPDATE BANK DETAILS
 // ============================================
 const updateBankDetails = async (req, res) => {
   try {
+    console.log('🏦 UPDATE BANK DETAILS - User:', req.user._id);
+    
     const { bankDetails } = req.body;
 
     if (!bankDetails) {
@@ -333,6 +331,8 @@ const updateBankDetails = async (req, res) => {
       { bankDetails },
       { new: true }
     ).select('-password -bankDetails.accountNumber');
+
+    console.log('✅ Bank details updated');
 
     res.status(200).json({
       success: true,
@@ -349,4 +349,12 @@ const updateBankDetails = async (req, res) => {
   }
 };
 
-module.exports = { updateSellerAddress, updateBankDetails, getUserStats };
+module.exports = {
+  getProfile,
+  updateProfile,
+  changePassword,
+  uploadProfilePicture,
+  getUserStats,
+  updateSellerAddress,   // ✅ NEW
+  updateBankDetails      // ✅ NEW
+};

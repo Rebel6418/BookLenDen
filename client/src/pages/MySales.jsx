@@ -24,11 +24,15 @@ const MySales = () => {
   };
 
   const handleConfirmOrder = async (orderId) => {
+    if (!window.confirm('⚠️ Confirm this order?\n\nShiprocket will automatically schedule pickup from your address.\n\nMake sure the book is ready!')) {
+      return;
+    }
+
     try {
       setUpdatingOrder(orderId);
       const res = await api.post(`/orders/${orderId}/confirm`);
       if (res.data.success) {
-        alert('✅ Order confirmed! Shiprocket pickup scheduled automatically!');
+        alert('✅ Order confirmed!\n\n🚚 Shiprocket pickup has been scheduled automatically.\n\nDelivery boy will come to your address to collect the book.');
         fetchSales();
       }
     } catch (err) {
@@ -40,19 +44,6 @@ const MySales = () => {
       } else {
         alert(msg);
       }
-    } finally {
-      setUpdatingOrder(null);
-    }
-  };
-
-  const handleUpdateStatus = async (orderId, status, trackingNumber = '') => {
-    try {
-      setUpdatingOrder(orderId);
-      await api.put(`/orders/${orderId}/status`, { status, trackingNumber });
-      alert(`✅ Order marked as ${status}!`);
-      fetchSales();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update status');
     } finally {
       setUpdatingOrder(null);
     }
@@ -198,23 +189,23 @@ const MySales = () => {
                     ))}
                   </div>
 
-                  {/* Buyer Info (Only Platform shows address - PRIVATE) */}
+                  {/* Buyer Info (City/Area Only - PRIVACY) */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                     <p className="text-xs font-bold text-blue-700 mb-1">📦 DELIVER TO (Buyer Info):</p>
                     <p className="text-sm font-semibold text-gray-800">{order.shippingAddress?.fullName}</p>
                     <p className="text-sm text-gray-600">
-                      {order.shippingAddress?.addressLine1}, {order.shippingAddress?.city} - {order.shippingAddress?.pincode}
+                      {order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.pincode}
                     </p>
                     <p className="text-sm text-gray-600">📞 {order.shippingAddress?.mobile}</p>
                     <p className="text-xs text-blue-600 mt-2 italic">
-                      🔒 Shiprocket handles pickup & delivery automatically
+                      🔒 Full address hidden for privacy. Shiprocket handles delivery automatically.
                     </p>
                   </div>
 
                   {/* Tracking (if available) */}
                   {order.trackingNumber && (
                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
-                      <p className="text-xs font-bold text-purple-700">📦 TRACKING NUMBER:</p>
+                      <p className="text-xs font-bold text-purple-700">📦 TRACKING NUMBER (Auto-generated):</p>
                       <p className="text-lg font-bold text-purple-900 mt-1">{order.trackingNumber}</p>
                       <a
                         href={`https://www.shiprocket.in/shipment-tracking/?id=${order.trackingNumber}`}
@@ -227,10 +218,31 @@ const MySales = () => {
                     </div>
                   )}
 
+                  {/* Shiprocket Status Info */}
+                  {order.orderStatus === 'confirmed' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                      <p className="text-sm font-bold text-green-800">✅ Pickup Scheduled!</p>
+                      <p className="text-sm text-green-700 mt-1">
+                        Shiprocket delivery boy will come to your address to collect the book.
+                        Keep it ready! Status will update automatically when picked up.
+                      </p>
+                    </div>
+                  )}
+
+                  {order.orderStatus === 'shipped' && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
+                      <p className="text-sm font-bold text-purple-800">🚚 In Transit!</p>
+                      <p className="text-sm text-purple-700 mt-1">
+                        Book is on its way to the buyer via Shiprocket.
+                        Delivery status will update automatically.
+                      </p>
+                    </div>
+                  )}
+
                   {/* ACTION BUTTONS */}
                   <div className="flex flex-wrap gap-3 mt-4">
 
-                    {/* PENDING → Confirm (Auto Shiprocket) */}
+                    {/* PENDING → Confirm (Only Manual Action) */}
                     {order.orderStatus === 'pending' && (
                       <button
                         onClick={() => handleConfirmOrder(order._id)}
@@ -240,34 +252,23 @@ const MySales = () => {
                         {updatingOrder === order._id ? (
                           <><span className="animate-spin">⏳</span> Processing...</>
                         ) : (
-                          <>✅ Confirm & Schedule Pickup</>
+                          <>✅ Confirm Order & Schedule Pickup</>
                         )}
                       </button>
                     )}
 
-                    {/* CONFIRMED → Mark Shipped (with tracking) */}
+                    {/* CONFIRMED → Waiting for Shiprocket Pickup */}
                     {order.orderStatus === 'confirmed' && (
-                      <button
-                        onClick={() => {
-                          const tracking = prompt('Enter Shiprocket AWB/Tracking Number (optional):');
-                          handleUpdateStatus(order._id, 'shipped', tracking || '');
-                        }}
-                        disabled={updatingOrder === order._id}
-                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold transition-all shadow-md disabled:opacity-50"
-                      >
-                        🚚 Mark as Shipped
-                      </button>
+                      <div className="flex items-center gap-2 px-6 py-3 bg-blue-100 text-blue-800 rounded-xl font-bold border-2 border-blue-300">
+                        ⏳ Waiting for Pickup (Shiprocket will collect)
+                      </div>
                     )}
 
-                    {/* SHIPPED → Mark Delivered */}
+                    {/* SHIPPED → In Transit (Auto-updated by Shiprocket) */}
                     {order.orderStatus === 'shipped' && (
-                      <button
-                        onClick={() => handleUpdateStatus(order._id, 'delivered')}
-                        disabled={updatingOrder === order._id}
-                        className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-bold transition-all shadow-md disabled:opacity-50"
-                      >
-                        📦 Mark as Delivered
-                      </button>
+                      <div className="flex items-center gap-2 px-6 py-3 bg-purple-100 text-purple-800 rounded-xl font-bold border-2 border-purple-300">
+                        🚚 In Transit (Tracking: {order.trackingNumber || 'Pending'})
+                      </div>
                     )}
 
                     {/* DELIVERED Badge */}
@@ -279,11 +280,30 @@ const MySales = () => {
 
                     {/* CANCELLED Badge */}
                     {order.orderStatus === 'cancelled' && (
-                      <div className="flex items-center gap-2 px-6 py-3 bg-red-100 text-red-800 rounded-xl font-bold border-2 border-red-300">
-                        ❌ Cancelled - {order.cancellationReason}
+                      <div className="flex flex-col gap-2 px-6 py-3 bg-red-100 text-red-800 rounded-xl font-bold border-2 border-red-300">
+                        <p>❌ Cancelled</p>
+                        {order.cancellationReason && (
+                          <p className="text-xs font-normal">Reason: {order.cancellationReason}</p>
+                        )}
                       </div>
                     )}
                   </div>
+
+                  {/* How Shiprocket Works - Info Box */}
+                  {order.orderStatus === 'pending' && (
+                    <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <p className="text-sm font-bold text-gray-700 mb-2">📋 What happens after you confirm?</p>
+                      <div className="space-y-1 text-xs text-gray-600">
+                        <p>1️⃣ You click "Confirm Order"</p>
+                        <p>2️⃣ Shiprocket automatically creates shipment</p>
+                        <p>3️⃣ Delivery boy scheduled to pickup from your address</p>
+                        <p>4️⃣ Status updates to "Shipped" when picked up (automatic)</p>
+                        <p>5️⃣ Book delivered to buyer (automatic)</p>
+                        <p>6️⃣ Status updates to "Delivered" (automatic)</p>
+                        <p>7️⃣ Payment released to you! 💰</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

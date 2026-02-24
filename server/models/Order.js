@@ -85,7 +85,75 @@ const orderSchema = new mongoose.Schema({
     default: ''
   },
   trackingNumber: String,
-  invoiceNumber: String
+  invoiceNumber: String,
+  
+  // ✅ NEW: Shiprocket Integration Fields
+  shiprocket: {
+    order_id: {
+      type: String,
+      default: ''
+    },
+    shipment_id: {
+      type: String,
+      default: ''
+    },
+    awb_code: {
+      type: String,
+      default: ''
+    },
+    courier_company_id: {
+      type: Number,
+      default: 0
+    },
+    courier_name: {
+      type: String,
+      default: ''
+    },
+    tracking_url: {
+      type: String,
+      default: ''
+    },
+    label_url: {
+      type: String,
+      default: ''
+    },
+    manifest_url: {
+      type: String,
+      default: ''
+    },
+    pickup_scheduled_date: {
+      type: Date
+    },
+    pickup_token_number: {
+      type: String,
+      default: ''
+    },
+    estimated_delivery_date: {
+      type: Date
+    },
+    current_status: {
+      type: String,
+      default: ''
+    },
+    current_status_code: {
+      type: Number,
+      default: 0
+    },
+    delivered_date: {
+      type: Date
+    },
+    rto_initiated_date: {
+      type: Date
+    },
+    weight: {
+      type: Number,
+      default: 0.5  // Default 500gm for books
+    },
+    rate: {
+      type: Number,
+      default: 0
+    }
+  }
 }, {
   timestamps: true
 });
@@ -117,5 +185,10 @@ orderSchema.pre('save', function(next) {
   }
   next();
 });
+
+// Add index for Shiprocket fields
+orderSchema.index({ 'shiprocket.order_id': 1 });
+orderSchema.index({ 'shiprocket.awb_code': 1 });
+orderSchema.index({ 'shiprocket.shipment_id': 1 });
 
 module.exports = mongoose.models.Order || mongoose.model('Order', orderSchema);

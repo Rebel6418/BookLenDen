@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 const app = express();
-
+const shiprocketRoutes = require('./routes/ShiprocketRoutes');
 // ============================================
 // MIDDLEWARE
 // ============================================
@@ -76,6 +76,7 @@ app.use((err, req, res, next) => {
     message: err.message || 'Internal server error'
   });
 });
+app.use('/api/shiprocket', shiprocketRoutes);
 
 // ============================================
 // DATABASE CONNECTION & SERVER START
